@@ -15,13 +15,18 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'ai-commerce.html'));
 });
 
-// API endpoint to get deployment info
-app.get('/api/deployment', (req, res) => {
+// API endpoint to get all credentials
+app.get('/api/config', (req, res) => {
     try {
         const deployment = require('./deployment.json');
-        res.json(deployment);
+        res.json({
+            contractAddress: deployment.sessionKeyManager,
+            mainWalletPrivateKey: process.env.PRIVATE_KEY,
+            geminiApiKey: process.env.GEMINI_API_KEY,
+            merchants: deployment.merchants
+        });
     } catch (error) {
-        res.status(500).json({ error: 'Deployment info not found' });
+        res.status(500).json({ error: 'Config not found: ' + error.message });
     }
 });
 
@@ -32,7 +37,7 @@ app.post('/api/ai-analyze', async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY;
 
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
