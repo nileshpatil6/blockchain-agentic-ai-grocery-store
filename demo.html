@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Commerce Protocol - Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .merchant-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+        }
+        .merchant-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .merchant-card .price {
+            font-size: 1.5em;
+            color: #667eea;
+            font-weight: bold;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 10px;
+            width: 100%;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .budget-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .budget-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .budget-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s;
+        }
+        .log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        .log-success { color: #4ec9b0; }
+        .log-error { color: #f48771; }
+        .log-info { color: #4fc1ff; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .setup-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .setup-section > div {
+            flex: 1;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Agentic Commerce Protocol</h1>
+            <p>Autonomous AI Payments with Restricted Permissions</p>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ Setup Session Key</h2>
+            <div class="setup-section">
+                <div>
+                    <label>Contract Address:</label>
+                    <input type="text" id="contractAddress" placeholder="0x...">
+                </div>
+                <div>
+                    <label>Session Key Private Key:</label>
+                    <input type="text" id="sessionKeyInput" placeholder="0x...">
+                </div>
+            </div>
+            <div class="setup-section">
+                <div>
+                    <label>Spending Limit (ETH):</label>
+                    <input type="number" id="spendingLimit" value="0.1" step="0.01">
+                </div>
+                <div>
+                    <label>Duration (hours):</label>
+                    <input type="number" id="duration" value="24">
+                </div>
+            </div>
+            <button onclick="createSessionKey()">Create Session Key</button>
+            <div id="setupStatus"></div>
+        </div>
+
+        <div class="card">
+            <h2>💰 Session Budget</h2>
+            <div class="budget-info">
+                <div>
+                    <strong>Limit:</strong> <span id="budgetLimit">0</span> ETH
+                </div>
+                <div>
+                    <strong>Spent:</strong> <span id="budgetSpent">0</span> ETH
+                </div>
+                <div>
+                    <strong>Remaining:</strong> <span id="budgetRemaining">0</span> ETH
+                </div>
+            </div>
+            <div class="budget-bar">
+                <div class="budget-fill" id="budgetBar" style="width: 0%"></div>
+            </div>
+            <button onclick="refreshBudget()">Refresh Budget</button>
+        </div>
+
+        <div class="card">
+            <h2>🛒 AI Agent Autonomous Purchases</h2>
+            <div class="grid" id="merchantGrid">
+                <!-- Merchants will be loaded here -->
+            </div>
+            <button onclick="simulateAIBehavior()" style="margin-top: 20px;">🤖 Simulate AI Autonomous Shopping</button>
+        </div>
+
+        <div class="card">
+            <h2>📊 Activity Log</h2>
+            <div class="log" id="activityLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let provider;
+        let signer;
+        let contract;
+        let sessionWallet;
+        let ownerAddress;
+        let merchants = {};
+
+        const contractABI = [
+            "function createSessionKey(address _sessionAddress, uint256 _spendingLimit, uint256 _durationInSeconds) external",
+            "function executePayment(address _owner, address _merchant, uint256 _amount) external payable",
+            "function getSessionKeyDetails(address _owner, address _sessionAddress) external view returns (uint256, uint256, uint256, bool)",
+            "function verifyMerchant(address _merchant) external",
+            "event SessionKeyCreated(address indexed owner, address indexed sessionKey, uint256 limit, uint256 expiry)",
+            "event PaymentExecuted(address indexed owner, address indexed merchant, uint256 amount)"
+        ];
+
+        const mockMerchants = [
+            { name: "AWS Cloud Services", service: "EC2 Instance", price: "0.01" },
+            { name: "Travel Booking", service: "Flight Ticket", price: "0.015" },
+            { name: "SaaS Platform", service: "Monthly Subscription", price: "0.005" },
+            { name: "Cloud Storage", service: "1TB Storage", price: "0.008" }
+        ];
+
+        async function init() {
+            if (typeof window.ethereum !== 'undefined') {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                ownerAddress = await signer.getAddress();
+                log(`Connected: ${ownerAddress}`, 'info');
+                loadMerchants();
+            } else {
+                log('Please install MetaMask!', 'error');
+            }
+        }
+
+        function loadMerchants() {
+            const grid = document.getElementById('merchantGrid');
+            grid.innerHTML = mockMerchants.map((m, i) => `
+                <div class="merchant-card">
+                    <h3>${m.name}</h3>
+                    <p>${m.service}</p>
+                    <div class="price">${m.price} ETH</div>
+                    <button onclick="makePurchase(${i})">🤖 AI Purchase</button>
+                </div>
+            `).join('');
+        }
+
+        async function createSessionKey() {
+            try {
+                const contractAddr = document.getElementById('contractAddress').value;
+                const sessionKeyPK = document.getElementById('sessionKeyInput').value;
+                const limit = document.getElementById('spendingLimit').value;
+                const duration = document.getElementById('duration').value;
+
+                if (!contractAddr || !sessionKeyPK) {
+                    showStatus('setupStatus', 'Please fill all fields', 'error');
+                    return;
+                }
+
+                contract = new ethers.Contract(contractAddr, contractABI, signer);
+                sessionWallet = new ethers.Wallet(sessionKeyPK, provider);
+
+                const limitWei = ethers.parseEther(limit);
+                const durationSec = parseInt(duration) * 3600;
+
+                log('Creating session key...', 'info');
+                const tx = await contract.createSessionKey(
+                    sessionWallet.address,
+                    limitWei,
+                    durationSec
+                );
+                await tx.wait();
+
+                showStatus('setupStatus', `Session key created! Address: ${sessionWallet.address}`, 'success');
+                log(`Session key created: ${sessionWallet.address}`, 'success');
+                refreshBudget();
+            } catch (error) {
+                showStatus('setupStatus', `Error: ${error.message}`, 'error');
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function refreshBudget() {
+            if (!contract || !sessionWallet) return;
+
+            try {
+                const details = await contract.getSessionKeyDetails(ownerAddress, sessionWallet.address);
+                const limit = ethers.formatEther(details[0]);
+                const spent = ethers.formatEther(details[1]);
+                const remaining = parseFloat(limit) - parseFloat(spent);
+                const percentage = (parseFloat(spent) / parseFloat(limit)) * 100;
+
+                document.getElementById('budgetLimit').textContent = parseFloat(limit).toFixed(4);
+                document.getElementById('budgetSpent').textContent = parseFloat(spent).toFixed(4);
+                document.getElementById('budgetRemaining').textContent = remaining.toFixed(4);
+                document.getElementById('budgetBar').style.width = `${percentage}%`;
+            } catch (error) {
+                log(`Budget refresh error: ${error.message}`, 'error');
+            }
+        }
+
+        async function makePurchase(index) {
+            if (!contract || !sessionWallet) {
+                log('Please setup session key first', 'error');
+                return;
+            }
+
+            try {
+                const merchant = mockMerchants[index];
+                const merchantAddr = ethers.Wallet.createRandom().address;
+                const amount = ethers.parseEther(merchant.price);
+
+                log(`🤖 AI deciding: ${merchant.service} - ${merchant.price} ETH`, 'info');
+
+                const sessionContract = contract.connect(sessionWallet);
+                const tx = await sessionContract.executePayment(
+                    ownerAddress,
+                    merchantAddr,
+                    amount,
+                    { value: amount }
+                );
+
+                log(`Transaction sent: ${tx.hash}`, 'info');
+                await tx.wait();
+
+                log(`✅ Payment successful: ${merchant.service}`, 'success');
+                refreshBudget();
+            } catch (error) {
+                log(`❌ Payment failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function simulateAIBehavior() {
+            log('🤖 AI Agent starting autonomous shopping...', 'info');
+            for (let i = 0; i < mockMerchants.length; i++) {
+                await new Promise(r => setTimeout(r, 2000));
+                await makePurchase(i);
+            }
+            log('🤖 AI Agent shopping complete!', 'success');
+        }
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('activityLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showStatus(elementId, message, type) {
+            const statusDiv = document.getElementById(elementId);
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

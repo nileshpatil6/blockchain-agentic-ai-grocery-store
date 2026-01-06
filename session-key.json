@@ -1,0 +1,9 @@
+{
+  "contractAddress": "0xB2EAD1DA72d933dD92A0DF5b921aDa0f79EcB4F2",
+  "sessionKeyAddress": "0xf1ECadD7A5544a0D65697621309689F4b13b980a",
+  "sessionKeyPrivateKey": "0x1df4a0a87f0316570965bc137743f138e9131274e8063560b83ab1a069d4e985",
+  "ownerAddress": "0x43e55D346e512f951C0776c61115C0Ea04a5b86D",
+  "spendingLimit": "0.1 ETH",
+  "createdAt": "2026-01-06T15:31:27.208Z",
+  "network": "sepolia"
+}

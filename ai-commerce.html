@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Commerce Agent - Autonomous Shopping</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: var(--dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1.1em;
+        }
+
+        .wallet-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+        }
+
+        .balance {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+
+        .products-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: var(--dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .product-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+
+        .product-card.selected {
+            border-color: var(--primary);
+            background: #f5f3ff;
+        }
+
+        .product-icon {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .product-price {
+            color: var(--primary);
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .product-category {
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .chat-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 700px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--light);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 80%;
+        }
+
+        .message.user .message-bubble {
+            background: var(--primary);
+            color: white;
+        }
+
+        .message.ai .message-bubble {
+            background: white;
+            color: var(--dark);
+            border: 2px solid var(--border);
+        }
+
+        .thinking-bubble {
+            background: #fef3c7;
+            border: 2px solid var(--warning);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+
+        .thinking-title {
+            font-weight: 600;
+            color: var(--warning);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .thinking-item {
+            padding: 8px 0;
+            border-left: 3px solid var(--warning);
+            padding-left: 10px;
+            margin: 5px 0;
+        }
+
+        .decision-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .decision-badge.approved {
+            background: #d1fae5;
+            color: var(--secondary);
+        }
+
+        .decision-badge.rejected {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action {
+            background: #f3f4f6;
+            border: 2px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .quick-action:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .transaction-status {
+            background: #dbeafe;
+            border: 2px solid #3b82f6;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+
+        .status-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+
+        .etherscan-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .etherscan-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .setup-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            color: var(--dark);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .modal-btn {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-btn:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <span>🤖</span>
+                AI Commerce Agent
+            </h1>
+            <p>Autonomous shopping powered by Gemini AI & Blockchain</p>
+            <div class="wallet-info">
+                <div>
+                    <div style="font-size: 0.9em; color: #6b7280;">Wallet Address</div>
+                    <div style="font-family: monospace; margin-top: 5px;" id="walletAddress">Not connected</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.9em; color: #6b7280;">Session Budget</div>
+                    <div class="balance" id="sessionBudget">0.00 ETH</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Products Section -->
+            <div class="products-section">
+                <div class="section-title">
+                    <span>🛒</span>
+                    Available Products
+                </div>
+                <div class="products-grid" id="productsGrid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <div class="section-title" style="margin-bottom: 15px;">
+                    <span>💬</span>
+                    AI Shopping Assistant
+                </div>
+                
+                <div class="quick-actions">
+                    <button class="quick-action" onclick="quickMessage('Buy groceries for pasta')">🍝 Pasta ingredients</button>
+                    <button class="quick-action" onclick="quickMessage('Get items for pizza')">🍕 Pizza ingredients</button>
+                    <button class="quick-action" onclick="quickMessage('Buy healthy snacks under budget')">🥗 Healthy snacks</button>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai">
+                        <div class="message-bubble">
+                            👋 Hi! I'm your AI shopping assistant. Tell me what you need and I'll intelligently purchase items within your budget. I'll analyze prices, make smart decisions, and reject overpriced items!
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="e.g., Buy groceries for making spaghetti carbonara"
+                        onkeypress="if(event.key==='Enter') sendMessage()"
+                    >
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Modal -->
+    <div class="setup-modal" id="setupModal">
+        <div class="modal-content">
+            <h2 class="modal-title">⚙️ Setup</h2>
+            <div class="input-group">
+                <label>Contract Address</label>
+                <input type="text" id="contractAddress" placeholder="0x...">
+            </div>
+            <div class="input-group">
+                <label>Session Key Private Key</label>
+                <input type="password" id="sessionPrivateKey" placeholder="0x...">
+            </div>
+            <div class="input-group">
+                <label>Gemini API Key</label>
+                <input type="password" id="geminiApiKey" placeholder="AIza...">
+            </div>
+            <button class="modal-btn" onclick="initializeApp()">
+                Initialize AI Agent
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Product catalog
+        const products = [
+            { id: 1, name: 'Pasta', price: '0.002', icon: '🍝', category: 'Grains' },
+            { id: 2, name: 'Tomatoes', price: '0.001', icon: '🍅', category: 'Vegetables' },
+            { id: 3, name: 'Olive Oil', price: '0.003', icon: '🫒', category: 'Oils' },
+            { id: 4, name: 'Garlic', price: '0.0005', icon: '🧄', category: 'Vegetables' },
+            { id: 5, name: 'Cheese', price: '0.004', icon: '🧀', category: 'Dairy' },
+            { id: 6, name: 'Basil', price: '0.001', icon: '🌿', category: 'Herbs' },
+            { id: 7, name: 'Onions', price: '0.0008', icon: '🧅', category: 'Vegetables' },
+            { id: 8, name: 'Chicken', price: '0.006', icon: '🍗', category: 'Meat' },
+            { id: 9, name: 'Rice', price: '0.0025', icon: '🍚', category: 'Grains' },
+            { id: 10, name: 'Eggs', price: '0.0015', icon: '🥚', category: 'Dairy' },
+            { id: 11, name: 'Milk', price: '0.002', icon: '🥛', category: 'Dairy' },
+            { id: 12, name: 'Bread', price: '0.0018', icon: '🍞', category: 'Bakery' },
+            { id: 13, name: 'Butter', price: '0.0035', icon: '🧈', category: 'Dairy' },
+            { id: 14, name: 'Salt', price: '0.0003', icon: '🧂', category: 'Spices' },
+            { id: 15, name: 'Pepper', price: '0.0006', icon: '🌶️', category: 'Spices' },
+            { id: 16, name: 'Lettuce', price: '0.0012', icon: '🥬', category: 'Vegetables' },
+        ];
+
+        let provider, signer, contract, sessionWallet, geminiApiKey;
+        let ownerAddress;
+        let sessionBudget = 0.1;
+
+        // Load products
+        function loadProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = products.map(p => `
+                <div class="product-card" data-product-id="${p.id}">
+                    <div class="product-icon">${p.icon}</div>
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-price">${p.price} ETH</div>
+                    <div class="product-category">${p.category}</div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize app
+        async function initializeApp() {
+            try {
+                const contractAddr = document.getElementById('contractAddress').value;
+                const sessionPK = document.getElementById('sessionPrivateKey').value;
+                geminiApiKey = document.getElementById('geminiApiKey').value;
+
+                if (!contractAddr || !sessionPK || !geminiApiKey) {
+                    alert('Please fill all fields!');
+                    return;
+                }
+
+                // Connect to MetaMask
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                ownerAddress = await signer.getAddress();
+
+                // Session wallet
+                sessionWallet = new ethers.Wallet(sessionPK, provider);
+
+                // Contract
+                const abi = [
+                    "function createSessionKey(address, uint256, uint256) external",
+                    "function executePayment(address, address, uint256) external payable",
+                    "function getSessionKeyDetails(address, address) external view returns (uint256, uint256, uint256, bool)",
+                    "function verifiedMerchants(address) external view returns (bool)"
+                ];
+                contract = new ethers.Contract(contractAddr, abi, sessionWallet);
+
+                // Update UI
+                document.getElementById('walletAddress').textContent = ownerAddress.substring(0, 10) + '...' + ownerAddress.substring(38);
+                document.getElementById('sessionBudget').textContent = sessionBudget.toFixed(3) + ' ETH';
+                document.getElementById('setupModal').style.display = 'none';
+
+                addMessage('ai', '✅ AI Agent initialized! Ready to shop smartly within your budget.');
+            } catch (error) {
+                alert('Setup failed: ' + error.message);
+            }
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage('user', message);
+            input.value = '';
+
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div>';
+
+            await processAIRequest(message);
+
+            btn.disabled = false;
+            btn.innerHTML = 'Send';
+        }
+
+        // Quick messages
+        function quickMessage(msg) {
+            document.getElementById('chatInput').value = msg;
+            sendMessage();
+        }
+
+        // Add message to chat
+        function addMessage(type, content, isHTML = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            
+            if (isHTML) {
+                bubble.innerHTML = content;
+            } else {
+                bubble.textContent = content;
+            }
+            
+            messageDiv.appendChild(bubble);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Process AI request
+        async function processAIRequest(userMessage) {
+            try {
+                // Call Gemini to understand the request
+                const analysis = await analyzeShoppingRequest(userMessage);
+                
+                // Show thinking process
+                showThinkingProcess(analysis);
+
+                // Execute purchases
+                if (analysis.items && analysis.items.length > 0) {
+                    await executePurchases(analysis.items, analysis.reasoning);
+                } else {
+                    addMessage('ai', '❌ I couldn\'t find suitable items for your request. Could you try rephrasing?');
+                }
+            } catch (error) {
+                addMessage('ai', '❌ Error: ' + error.message);
+            }
+        }
+
+        // Analyze shopping request with Gemini
+        async function analyzeShoppingRequest(userMessage) {
+            const prompt = `You are a smart shopping assistant. Analyze this shopping request:
+"${userMessage}"
+
+Available products:
+${products.map(p => `${p.name} (${p.price} ETH) - ${p.category}`).join('\n')}
+
+Budget: ${sessionBudget} ETH
+
+Task: Identify which products to buy, prioritize essentials, reject overpriced items.
+Respond ONLY with valid JSON:
+{
+  "items": [{"name": "product", "reason": "why"}],
+  "reasoning": "overall strategy",
+  "totalCost": number,
+  "rejected": [{"name": "product", "reason": "why rejected"}]
+}`;
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            const data = await response.json();
+            const text = data.candidates[0].content.parts[0].text;
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            
+            return jsonMatch ? JSON.parse(jsonMatch[0]) : { items: [], reasoning: '', rejected: [] };
+        }
+
+        // Show thinking process
+        function showThinkingProcess(analysis) {
+            let html = '<div class="thinking-bubble">';
+            html += '<div class="thinking-title">🧠 AI Thinking Process</div>';
+            html += `<div style="margin: 10px 0; color: #374151;">${analysis.reasoning}</div>`;
+            
+            if (analysis.items && analysis.items.length > 0) {
+                html += '<div style="margin-top: 10px;"><strong>✅ Approved Purchases:</strong></div>';
+                analysis.items.forEach(item => {
+                    html += `<div class="thinking-item">• ${item.name} - ${item.reason}</div>`;
+                });
+            }
+            
+            if (analysis.rejected && analysis.rejected.length > 0) {
+                html += '<div style="margin-top: 10px;"><strong>❌ Rejected Items:</strong></div>';
+                analysis.rejected.forEach(item => {
+                    html += `<div class="thinking-item" style="border-color: var(--danger);">• ${item.name} - ${item.reason}</div>`;
+                });
+            }
+            
+            html += `<div style="margin-top: 10px;"><strong>Estimated Cost:</strong> ${analysis.totalCost || 0} ETH</div>`;
+            html += '</div>';
+            
+            addMessage('ai', html, true);
+        }
+
+        // Execute purchases
+        async function executePurchases(itemsToBuy, reasoning) {
+            for (const item of itemsToBuy) {
+                const product = products.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+                if (!product) continue;
+
+                addMessage('ai', `🛒 Purchasing ${product.name}...`);
+                
+                try {
+                    // Mock merchant address (in real app, this would be from deployment)
+                    const merchantAddr = ethers.Wallet.createRandom().address;
+                    const amount = ethers.parseEther(product.price);
+
+                    const tx = await contract.executePayment(
+                        ownerAddress,
+                        merchantAddr,
+                        amount,
+                        { value: amount }
+                    );
+
+                    addMessage('ai', `⏳ Transaction submitted...`);
+                    await tx.wait();
+
+                    sessionBudget -= parseFloat(product.price);
+                    document.getElementById('sessionBudget').textContent = sessionBudget.toFixed(3) + ' ETH';
+
+                    const statusHTML = `
+                        <div class="transaction-status">
+                            <div class="status-title">✅ Purchase Successful!</div>
+                            <div>${product.icon} ${product.name} - ${product.price} ETH</div>
+                            <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank" class="etherscan-link">
+                                View on Etherscan →
+                            </a>
+                        </div>
+                    `;
+                    addMessage('ai', statusHTML, true);
+                } catch (error) {
+                    addMessage('ai', `❌ Failed to purchase ${product.name}: ${error.message}`);
+                }
+
+                await new Promise(r => setTimeout(r, 2000));
+            }
+
+            addMessage('ai', `🎉 Shopping complete! Remaining budget: ${sessionBudget.toFixed(3)} ETH`);
+        }
+
+        // Load products on page load
+        window.addEventListener('load', () => {
+            loadProducts();
+        });
+    </script>
+</body>
+</html>
