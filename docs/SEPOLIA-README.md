@@ -30,7 +30,7 @@ Your project is now configured for Sepolia testnet deployment!
 
 4. **Update .env File**:
    ```env
-   GEMINI_API_KEY=AIzaSyCbRsJXgRQSTkKV1SlTstc9cb_CPzqArjk
+   GEMINI_API_KEY=api_key
    INFURA_API_KEY=your_infura_key_here
    PRIVATE_KEY=0x_your_private_key_here
    ```
